@@ -39,41 +39,41 @@ def add_round_key(str1, str2):
 def shift_row(word):
     return word[2:8]+word[0:2]
 
-def g(word):
+def g(word, round_constant):
     row_shifted_word = shift_row(word)
     sub_bytes = generate_sub_bytes(row_shifted_word)
-    result = add_round_key(sub_bytes, "01000000")
+    result = add_round_key(sub_bytes, round_constant)
     return result
 
+def generate_round_keys(word0, word1, word2, word3, round_constant):
+    round_key = ''
+    temp = g(word3, round_constant)
+    word4 = add_round_key(word0, temp)
+    word5 = add_round_key(word4, word1)
+    word6 = add_round_key(word5, word2)
+    word7 = add_round_key(word6, word3)
+    round_key = word4+word5+word6+word7
+    return round_key
 
 key = "Thats my Kung Fu"
 keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
 #print(keyInHex)
-
-#print(hex(Sbox[2][0]))
 
 word0 = keyInHex[0:8]
 word1 = keyInHex[8:16]
 word2 = keyInHex[16:24]
 word3 = keyInHex[24:32]
 
-#print(shift_row(word3))
-#print(word0)
-#print(word1)
-#print(word2)
-#print(word3[0:2])
+print(word0+word1+word2+word3)
 
-# print(g(word3))
+round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
 
-word4 = add_round_key(word0, g(word3))
-word5 = add_round_key(word4, word1)
-word6 = add_round_key(word5, word2)
-word7 = add_round_key(word6, word3)
 
-# print(word4)
-# print(word5)
-# print(word6)
-# print(word7)
-
-first_round_key = word4+word5+word6+word7
-print(first_round_key)
+for i in range(1, 11):
+    print(round_constants[i-1])
+    round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
+    print(round_key)
+    word0 = round_key[0:8]
+    word1 = round_key[8:16]
+    word2 = round_key[16:24]
+    word3 = round_key[24:32]
