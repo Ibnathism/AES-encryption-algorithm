@@ -21,7 +21,11 @@ Sbox = [
 def read_sbox(index_string):
     row = int(index_string[0], 16)
     col = int(index_string[1], 16)
-    s_box_data = hex(Sbox[row][col])
+    #print(Sbox[row][col])
+    temp = Sbox[row][col]
+    temp_bv = BitVector(intVal=temp, size=16)
+    s_box_data = temp_bv.get_bitvector_in_hex()
+    #print(s_box_data+" when index string "+index_string)
     return str(s_box_data)[2:4]
 
 def generate_sub_bytes(word):
@@ -70,10 +74,17 @@ round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '
 
 
 for i in range(1, 11):
-    print(round_constants[i-1])
+    #print(round_constants[i-1])
     round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
     print(round_key)
     word0 = round_key[0:8]
     word1 = round_key[8:16]
     word2 = round_key[16:24]
     word3 = round_key[24:32]
+
+# print('C3031EFB')
+# temp = shift_row('C3031EFB')
+# print("shift row "+temp)
+# sub = generate_sub_bytes(temp)
+# print("sub bytes "+sub)
+
