@@ -1,4 +1,5 @@
 from BitVector import *
+import numpy as np
 Sbox = [
     [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
     [0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0],
@@ -62,13 +63,16 @@ def generate_round_keys(word0, word1, word2, word3, round_constant):
 key = "Thats my Kung Fu"
 keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
 #print(keyInHex)
+text = "Two One Nine Two"
+textInHex = BitVector(textstring=text).get_bitvector_in_hex()
+
 
 word0 = keyInHex[0:8]
 word1 = keyInHex[8:16]
 word2 = keyInHex[16:24]
 word3 = keyInHex[24:32]
 
-print(word0+word1+word2+word3)
+#print(word0+word1+word2+word3)
 
 round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
 
@@ -76,7 +80,7 @@ round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '
 for i in range(1, 11):
     #print(round_constants[i-1])
     round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
-    print(round_key)
+    #print(round_key)
     word0 = round_key[0:8]
     word1 = round_key[8:16]
     word2 = round_key[16:24]
@@ -87,4 +91,31 @@ for i in range(1, 11):
 # print("shift row "+temp)
 # sub = generate_sub_bytes(temp)
 # print("sub bytes "+sub)
+
+state_mat = add_round_key(keyInHex, textInHex)
+state_mat_sub_byte = generate_sub_bytes(state_mat)
+print(state_mat_sub_byte)
+
+def make_state_matrix(my_str):
+    matrix = []
+    str_idx = 0
+    for row in range(0,4):
+        temp_mat = []
+        for col in range(0,4):
+            temp = BitVector(hexstring=my_str[str_idx]+my_str[str_idx+1]).get_bitvector_in_hex()
+            #print(temp)
+            temp_mat.append(temp)
+            str_idx = str_idx + 2
+        matrix.append(temp_mat)
+
+    mat = np.matrix(matrix)
+    return mat.transpose()
+
+
+# def make_state_matrix(my_str):
+#     matrix = np.matrix(my_str)
+#     return matrix
+
+print(make_state_matrix(state_mat_sub_byte))
+
 
