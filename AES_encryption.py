@@ -68,12 +68,34 @@ def generate_round_keys(word0, word1, word2, word3, round_constant):
     round_key = word4+word5+word6+word7
     return round_key
 
-def get_linear_index(row, col):
-    return row*2 + col*8
+def multiply(str1, str2):
+    AES_modulus = BitVector(bitstring='100011011')
+    bv1 = BitVector(hexstring=str1)
+    bv2 = BitVector(hexstring=str2)
+    temp = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+    return temp.get_bitvector_in_hex()
+
+def get_linear_val(row, col, str):
+    idx = row*2 + col*8
+    return str[idx:idx+2]
 
 def get_mix_column_value(row, col, state_mat):
-    mix_column_constant = "02010103030201010103020101010302"
+    mix_con = "02010103030201010103020101010302"
+    m0 = multiply(get_linear_val(row, 0, mix_con), get_linear_val(0, col, state_mat))
+    m1 = multiply(get_linear_val(row, 1, mix_con), get_linear_val(1, col, state_mat))
+    m2 = multiply(get_linear_val(row, 2, mix_con), get_linear_val(2, col, state_mat))
+    m3 = multiply(get_linear_val(row, 3, mix_con), get_linear_val(3, col, state_mat))
+    temp = add_round_key(m0, m1)
+    temp = add_round_key(temp, m2)
+    temp = add_round_key(temp, m3)
+    return temp
 
+def apply_mix_column(state_mat):
+    temp = ''
+    for col in range(0,4):
+        for row in range(0,4):
+            temp = temp + get_mix_column_value(row, col, state_mat)
+    return temp
 
 key = "Thats my Kung Fu"
 keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
@@ -91,21 +113,26 @@ word3 = keyInHex[24:32]
 #print(word0+word1+word2+word3)
 
 round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
-
+rk_list = []
+rk_list.append(keyInHex)
 
 for i in range(1, 11):
     round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
     #print(round_key)
+    rk_list.append(round_key)
     word0 = round_key[0:8]
     word1 = round_key[8:16]
     word2 = round_key[16:24]
     word3 = round_key[24:32]
 
 state_mat = add_round_key(keyInHex, textInHex)
-state_mat = generate_sub_bytes(state_mat)
-state_mat = cyclic_shift_row(state_mat)
-print(state_mat)
-index = get_linear_index(3,2)
-print(state_mat[index:index+2])
+
+for r in range(1, 11):
+    state_mat = generate_sub_bytes(state_mat)
+    state_mat = cyclic_shift_row(state_mat)
+    if r != 10:
+        state_mat = apply_mix_column(state_mat)
+    state_mat = add_round_key(state_mat, rk_list[r])
+    print(r, ': ', state_mat)
 
 
