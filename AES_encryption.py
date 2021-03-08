@@ -43,6 +43,15 @@ def add_round_key(str1, str2):
 def shift_row(word):
     return word[2:8]+word[0:2]
 
+def cyclic_shift_row(state_mat):
+    w0 = state_mat[0:2] + state_mat[10:12] + state_mat[20:22] + state_mat[30:32]
+    w1 = state_mat[8:10] + state_mat[18:20] + state_mat[28:30] + state_mat[6:8]
+    w2 = state_mat[16:18] + state_mat[26:28] + state_mat[4:6] + state_mat[14:16]
+    w3 = state_mat[24:26] + state_mat[2:4] + state_mat[12:14] + state_mat[22:24]
+
+    return w0 + w1 + w2 + w3 
+
+
 def g(word, round_constant):
     row_shifted_word = shift_row(word)
     sub_bytes = generate_sub_bytes(row_shifted_word)
@@ -77,7 +86,6 @@ round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '
 
 
 for i in range(1, 11):
-    #print(round_constants[i-1])
     round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
     #print(round_key)
     word0 = round_key[0:8]
@@ -85,37 +93,10 @@ for i in range(1, 11):
     word2 = round_key[16:24]
     word3 = round_key[24:32]
 
-# print('C3031EFB')
-# temp = shift_row('C3031EFB')
-# print("shift row "+temp)
-# sub = generate_sub_bytes(temp)
-# print("sub bytes "+sub)
-
 state_mat = add_round_key(keyInHex, textInHex)
-state_mat_sub_byte = generate_sub_bytes(state_mat)
-print(state_mat_sub_byte)
+state_mat = generate_sub_bytes(state_mat)
+state_mat = cyclic_shift_row(state_mat)
+print(state_mat)
 
-def make_state_matrix(my_str):
-    matrix = []
-    str_idx = 0
-    for row in range(0,4):
-        temp_mat = []
-        for col in range(0,4):
-            temp = BitVector(hexstring=my_str[str_idx]+my_str[str_idx+1]).get_bitvector_in_hex()
-            #print(temp)
-            temp_mat.append(temp)
-            str_idx = str_idx + 2
-        matrix.append(temp_mat)
-
-    mat = np.matrix(matrix)
-    return mat.transpose()
-
-
-
-# def make_state_matrix(my_str):
-#     matrix = np.matrix(my_str)
-#     return matrix
-
-print(make_state_matrix(state_mat_sub_byte))
 
 
