@@ -68,11 +68,19 @@ def generate_round_keys(word0, word1, word2, word3, round_constant):
     round_key = word4+word5+word6+word7
     return round_key
 
+def get_linear_index(row, col):
+    return row*2 + col*8
+
+def get_mix_column_value(row, col, state_mat):
+    mix_column_constant = "02010103030201010103020101010302"
+
+
 key = "Thats my Kung Fu"
 keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
 #print(keyInHex)
 text = "Two One Nine Two"
 textInHex = BitVector(textstring=text).get_bitvector_in_hex()
+
 
 
 word0 = keyInHex[0:8]
@@ -97,6 +105,7 @@ state_mat = add_round_key(keyInHex, textInHex)
 state_mat = generate_sub_bytes(state_mat)
 state_mat = cyclic_shift_row(state_mat)
 print(state_mat)
-
+index = get_linear_index(3,2)
+print(state_mat[index:index+2])
 
 
