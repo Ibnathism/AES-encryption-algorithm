@@ -97,6 +97,43 @@ def apply_mix_column(state_mat):
             temp = temp + get_mix_column_value(row, col, state_mat)
     return temp
 
+def get_rk_list(keyInHex):
+    word0 = keyInHex[0:8]
+    word1 = keyInHex[8:16]
+    word2 = keyInHex[16:24]
+    word3 = keyInHex[24:32]
+    round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
+    rk_list = []
+    rk_list.append(keyInHex)
+
+    for i in range(1, 11):
+        round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
+        #print(round_key)
+        rk_list.append(round_key)
+        word0 = round_key[0:8]
+        word1 = round_key[8:16]
+        word2 = round_key[16:24]
+        word3 = round_key[24:32]
+
+    return rk_list
+
+
+def encrypt(rkList, textInHex):
+    state_mat = add_round_key(rkList[0], textInHex)
+
+    for r in range(1, 11):
+        state_mat = generate_sub_bytes(state_mat)
+        state_mat = cyclic_shift_row(state_mat)
+        if r != 10:
+            state_mat = apply_mix_column(state_mat)
+        state_mat = add_round_key(state_mat, rkList[r])
+        #print(r, ': ', state_mat)
+    return state_mat
+
+
+
+
+
 key = "Thats my Kung Fu"
 keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
 #print(keyInHex)
@@ -104,35 +141,7 @@ text = "Two One Nine Two"
 textInHex = BitVector(textstring=text).get_bitvector_in_hex()
 
 
-
-word0 = keyInHex[0:8]
-word1 = keyInHex[8:16]
-word2 = keyInHex[16:24]
-word3 = keyInHex[24:32]
-
-#print(word0+word1+word2+word3)
-
-round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
-rk_list = []
-rk_list.append(keyInHex)
-
-for i in range(1, 11):
-    round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
-    #print(round_key)
-    rk_list.append(round_key)
-    word0 = round_key[0:8]
-    word1 = round_key[8:16]
-    word2 = round_key[16:24]
-    word3 = round_key[24:32]
-
-state_mat = add_round_key(keyInHex, textInHex)
-
-for r in range(1, 11):
-    state_mat = generate_sub_bytes(state_mat)
-    state_mat = cyclic_shift_row(state_mat)
-    if r != 10:
-        state_mat = apply_mix_column(state_mat)
-    state_mat = add_round_key(state_mat, rk_list[r])
-    print(r, ': ', state_mat)
-
+rk_list = get_rk_list(keyInHex)
+cipherText = encrypt(rk_list, textInHex)
+print(cipherText)
 
