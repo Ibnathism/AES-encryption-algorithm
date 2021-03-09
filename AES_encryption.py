@@ -38,34 +38,45 @@ InvSbox = (
 )
 
 def read_sbox(index_string, is_inverse):
+    
     row = int(index_string[0], 16)
     col = int(index_string[1], 16)
     #print(Sbox[row][col])
+    
     if is_inverse:
         temp = InvSbox[row][col]
     else:
         temp = Sbox[row][col]
+    
     temp_bv = BitVector(intVal=temp, size=16)
     s_box_data = temp_bv.get_bitvector_in_hex()
     #print(s_box_data+" when index string "+index_string)
+    
     return str(s_box_data)[2:4]
 
 def generate_sub_bytes(word, is_inverse):
+    
     length = len(word)
     sub_bytes = ""
+    
     for i in range(0, length-1, 2):
         temp = read_sbox(word[i:i+2], is_inverse)
         sub_bytes = sub_bytes + temp
+    
     return sub_bytes
 
 def add_round_key(str1, str2):
+    
     added_val = BitVector(hexstring=str1) ^ BitVector(hexstring=str2)
+    
     return added_val.get_bitvector_in_hex()
 
 def shift_row(word):
+    
     return word[2:8]+word[0:2]
 
 def cyclic_shift_row(state_mat):
+    
     w0 = state_mat[0:2] + state_mat[10:12] + state_mat[20:22] + state_mat[30:32]
     w1 = state_mat[8:10] + state_mat[18:20] + state_mat[28:30] + state_mat[6:8]
     w2 = state_mat[16:18] + state_mat[26:28] + state_mat[4:6] + state_mat[14:16]
@@ -74,6 +85,7 @@ def cyclic_shift_row(state_mat):
     return w0 + w1 + w2 + w3 
 
 def inverse_cyclic_shift_row(state_mat):
+    
     w0 = state_mat[0:2] + state_mat[26:28] + state_mat[20:22] + state_mat[14:16]
     w1 = state_mat[8:10] + state_mat[2:4] + state_mat[28:30] + state_mat[22:24]
     w2 = state_mat[16:18] + state_mat[10:12] + state_mat[4:6] + state_mat[30:32]
@@ -82,61 +94,81 @@ def inverse_cyclic_shift_row(state_mat):
     return w0 + w1 + w2 + w3 
 
 def g(word, round_constant):
+    
     row_shifted_word = shift_row(word)
     sub_bytes = generate_sub_bytes(row_shifted_word, False)
     result = add_round_key(sub_bytes, round_constant)
+    
     return result
 
 def generate_round_keys(word0, word1, word2, word3, round_constant):
+    
     round_key = ''
     temp = g(word3, round_constant)
+    
     word4 = add_round_key(word0, temp)
     word5 = add_round_key(word4, word1)
     word6 = add_round_key(word5, word2)
     word7 = add_round_key(word6, word3)
+    
     round_key = word4+word5+word6+word7
+    
     return round_key
 
 def multiply(str1, str2):
+    
     AES_modulus = BitVector(bitstring='100011011')
     bv1 = BitVector(hexstring=str1)
     bv2 = BitVector(hexstring=str2)
     temp = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+    
     return temp.get_bitvector_in_hex()
 
 def get_linear_val(row, col, str):
+    
     idx = row*2 + col*8
+    
     return str[idx:idx+2]
 
 def get_mix_column_value(row, col, state_mat, is_inverse):
+    
     if is_inverse:
         mix_con = "0E090D0B0B0E090D0D0B0E09090D0B0E"
     else:
         mix_con = "02010103030201010103020101010302"
+    
     m0 = multiply(get_linear_val(row, 0, mix_con), get_linear_val(0, col, state_mat))
     m1 = multiply(get_linear_val(row, 1, mix_con), get_linear_val(1, col, state_mat))
     m2 = multiply(get_linear_val(row, 2, mix_con), get_linear_val(2, col, state_mat))
     m3 = multiply(get_linear_val(row, 3, mix_con), get_linear_val(3, col, state_mat))
+    
     temp = add_round_key(m0, m1)
     temp = add_round_key(temp, m2)
     temp = add_round_key(temp, m3)
+    
     return temp
 
 def apply_mix_column(state_mat, is_inverse):
+    
     temp = ''
+    
     for col in range(0,4):
         for row in range(0,4):
             temp = temp + get_mix_column_value(row, col, state_mat, is_inverse)
+    
     return temp
 
 def get_rk_list(keyInHex):
+    
+    round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
+    
+    rk_list = []
+    rk_list.append(keyInHex)
+
     word0 = keyInHex[0:8]
     word1 = keyInHex[8:16]
     word2 = keyInHex[16:24]
     word3 = keyInHex[24:32]
-    round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
-    rk_list = []
-    rk_list.append(keyInHex)
 
     for i in range(1, 11):
         round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
@@ -151,41 +183,77 @@ def get_rk_list(keyInHex):
 
 
 def encrypt(rkList, textInHex):
+    
     state_mat = add_round_key(rkList[0], textInHex)
 
     for r in range(1, 11):
         state_mat = generate_sub_bytes(state_mat, False)
         state_mat = cyclic_shift_row(state_mat)
+        
         if r != 10:
             state_mat = apply_mix_column(state_mat, False)
+        
         state_mat = add_round_key(state_mat, rkList[r])
+        
         #print(r, ': ', state_mat)
+    
     return state_mat
 
 def decrypt(rkList, cipherText):
+    
     state_mat = add_round_key(rkList[10], cipherText)
 
     for r in range(1, 11):
         state_mat = inverse_cyclic_shift_row(state_mat)
         state_mat = generate_sub_bytes(state_mat, True)
         state_mat = add_round_key(state_mat, rkList[10-r])
+        
         if r != 10:
             state_mat = apply_mix_column(state_mat, True)
-        print(r, ': ', state_mat)
+        
+        #print(r, ': ', state_mat)
+    
     return state_mat
 
+def simulate_aes(key, text):
+    
+    keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
+    textInHex = BitVector(textstring=text).get_bitvector_in_hex()
+    
+    rk_list = get_rk_list(keyInHex)
+
+    cipherText = encrypt(rk_list, textInHex)
+    cipherTextInAscii = BitVector(hexstring=cipherText).get_bitvector_in_ascii()
+
+    decipherd = decrypt(rk_list, cipherText)
+    decipherdInAscii = BitVector(hexstring=decipherd).get_bitvector_in_ascii()
+
+    print('Plain Text:')
+    print()
+    
+    print('Key:')
+    print(key, ' [In ASCII]')
+    print(keyInHex, ' [In HEX]')
+    print()
+    
+    print(text, ' [In ASCII]')
+    print(textInHex, ' [In HEX]')
+    print()
+    
+    print('Cipher Text:')
+    print(cipherText, ' [In HEX]')
+    print(cipherTextInAscii, ' [In ASCII]')
+    print()
+    
+    print('Deciphered Text:')
+    print(decipherd, ' [In HEX]')
+    print(decipherdInAscii, ' [In ASCII]')
+
+
+
+
+
 key = "Thats my Kung Fu"
-keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
-#print(keyInHex)
 text = "Two One Nine Two"
-textInHex = BitVector(textstring=text).get_bitvector_in_hex()
+simulate_aes(key, text)
 
-
-rk_list = get_rk_list(keyInHex)
-cipherText = encrypt(rk_list, textInHex)
-print(cipherText)
-
-result = decrypt(rk_list, cipherText)
-print(result)
-result = BitVector(hexstring=result)
-print(result.get_bitvector_in_ascii())
