@@ -184,7 +184,7 @@ def get_rk_list(keyInHex):
     return rk_list
 
 
-def encrypt(rkList, text):
+def encrypt_text(rkList, text):
 
     textInHex = BitVector(textstring=text).get_bitvector_in_hex()
     
@@ -203,7 +203,7 @@ def encrypt(rkList, text):
     
     return state_mat
 
-def decrypt(rkList, cipherText):
+def decrypt_text(rkList, cipherText):
     
     state_mat = add_round_key(rkList[10], cipherText)
 
@@ -216,7 +216,8 @@ def decrypt(rkList, cipherText):
             state_mat = apply_mix_column(state_mat, True)
         
         #print(r, ': ', state_mat)
-    
+
+    print("Decipher", state_mat)
     state_mat = BitVector(hexstring=state_mat).get_bitvector_in_ascii()
     
     return state_mat
@@ -234,35 +235,39 @@ def init(key):
 
     return rk_list
 
-key = "Thats my Kung Fu"
+def encrypt(f_name):
+    s = ConstBitStream(filename=f_name)
+    text = BitVector(bitstring=s).get_bitvector_in_ascii()
+
+    l = len(text)
+    encrypted_text = ''
+    for i in range(0, l-1, 16):
+        t = text[i:i+16]
+        if i+16 > l:
+            t = t.ljust(16)
+        temp = encrypt_text(rks, t)
+        print('Cipher', temp)
+        encrypted_text = encrypted_text + temp
+
+    return encrypted_text
+
+def decrypt(encrypted_text, file_name):
+    l = len(encrypted_text)
+    den = ''
+    for i in range(0, l-1, 32):
+        temp = decrypt_text(rks, encrypted_text[i:i+32])
+        #print("Decipher", temp)
+        den = den + temp
+
+    f = open(file_name, 'a')
+    f.write(den)
+
+key = "Thats my Kung Fuhgjhghg"
 
 rks = init(key)
 
-s = ConstBitStream(filename='input.txt')
-text = BitVector(bitstring=s).get_bitvector_in_ascii()
+en_text = encrypt("input.txt")
+
+decrypt(en_text, "output.txt")
 
 
-# f = open('input.txt', 'r')
-# text = f.read()
-
-l = len(text)
-en = ''
-for i in range(0, l-1, 16):
-    t = text[i:i+16]
-    if i+16 > l:
-        t = t.ljust(16)
-    temp = encrypt(rks, t)
-    print('Cipher', temp)
-    en = en + temp
-
-
-l = len(en)
-den = ''
-for i in range(0, l-1, 32):
-    temp = decrypt(rks, en[i:i+32])
-    print("Decipher", temp)
-    
-    den = den + temp
-
-f = open('output.txt', 'a')
-f.write(den)
