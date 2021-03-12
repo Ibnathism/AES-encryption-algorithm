@@ -1,4 +1,6 @@
 from BitVector import *
+from bitstring import ConstBitStream
+
 Sbox = [
     [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
     [0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0],
@@ -233,19 +235,31 @@ def init(key):
     return rk_list
 
 key = "Thats my Kung Fu"
-text = "Two One Nine Two Two One Nine Two fdsdfadsfgdfg hellodfgsdf\nsadfasfsd"
+#text = "Two One Nine Two Two One Nine Two fdsdfadsfgdfg hellodfgsdf\nsadfasfsd"
 
 rks = init(key)
+
+s = ConstBitStream(filename='input.pdf')
+text = BitVector(bitstring=s).get_bitvector_in_ascii()
+
+
+# f = open('input.txt', 'r')
+# text = f.read()
 
 l = len(text)
 en = ''
 for i in range(0, l-1, 16):
-    en = en + encrypt(rks, text[i:i+16])
+    temp = encrypt(rks, text[i:i+16])
+    print('Cipher', temp)
+    en = en + temp
 
-print(en)
 
 l = len(en)
 den = ''
 for i in range(0, l-1, 32):
-    den = den + decrypt(rks, en[i:i+32])
-print(den)
+    temp = decrypt(rks, en[i:i+32])
+    print("Decipher", temp)
+    den = den + temp
+
+f = open('output.pdf', 'a')
+f.write(den)
