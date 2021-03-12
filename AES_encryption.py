@@ -235,11 +235,10 @@ def init(key):
     return rk_list
 
 key = "Thats my Kung Fu"
-#text = "Two One Nine Two Two One Nine Two fdsdfadsfgdfg hellodfgsdf\nsadfasfsd"
 
 rks = init(key)
 
-s = ConstBitStream(filename='input.pdf')
+s = ConstBitStream(filename='input.txt')
 text = BitVector(bitstring=s).get_bitvector_in_ascii()
 
 
@@ -249,7 +248,10 @@ text = BitVector(bitstring=s).get_bitvector_in_ascii()
 l = len(text)
 en = ''
 for i in range(0, l-1, 16):
-    temp = encrypt(rks, text[i:i+16])
+    t = text[i:i+16]
+    if i+16 > l:
+        t = t.ljust(16)
+    temp = encrypt(rks, t)
     print('Cipher', temp)
     en = en + temp
 
@@ -259,7 +261,8 @@ den = ''
 for i in range(0, l-1, 32):
     temp = decrypt(rks, en[i:i+32])
     print("Decipher", temp)
+    
     den = den + temp
 
-f = open('output.pdf', 'a')
+f = open('output.txt', 'a')
 f.write(den)
