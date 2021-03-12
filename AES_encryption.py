@@ -182,7 +182,9 @@ def get_rk_list(keyInHex):
     return rk_list
 
 
-def encrypt(rkList, textInHex):
+def encrypt(rkList, text):
+
+    textInHex = BitVector(textstring=text).get_bitvector_in_hex()
     
     state_mat = add_round_key(rkList[0], textInHex)
 
@@ -213,53 +215,37 @@ def decrypt(rkList, cipherText):
         
         #print(r, ': ', state_mat)
     
+    state_mat = BitVector(hexstring=state_mat).get_bitvector_in_ascii()
+    
     return state_mat
+    
 
-def simulate_aes(key, text):
-
+def init(key):
     if len(key) > 16:
         key = key[0:16]
     elif len(key) < 16:
         key.ljust(16, '0')
     
     keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
-    textInHex = BitVector(textstring=text).get_bitvector_in_hex()
 
     rk_list = get_rk_list(keyInHex)
 
-    cipherText = encrypt(rk_list, textInHex)
-    cipherTextInAscii = BitVector(hexstring=cipherText).get_bitvector_in_ascii()
-
-    decipherd = decrypt(rk_list, cipherText)
-    decipherdInAscii = BitVector(hexstring=decipherd).get_bitvector_in_ascii()
-
-    print('Plain Text:')
-    print()
-    
-    print('Key:')
-    print(key, ' [In ASCII]')
-    print(keyInHex, ' [In HEX]')
-    print()
-    
-    print(text, ' [In ASCII]')
-    print(textInHex, ' [In HEX]')
-    print()
-    
-    print('Cipher Text:')
-    print(cipherText, ' [In HEX]')
-    print(cipherTextInAscii, ' [In ASCII]')
-    print()
-    
-    print('Deciphered Text:')
-    print(decipherd, ' [In HEX]')
-    print(decipherdInAscii, ' [In ASCII]')
-
-
-
-
+    return rk_list
 
 key = "Thats my Kung Fu"
-text = "Two One Nine Two"
+text = "Two One Nine Two Two One Nine Two fdsdfadsfgdfg hellodfgsdf\nsadfasfsd"
 
-simulate_aes(key, text)
+rks = init(key)
 
+l = len(text)
+en = ''
+for i in range(0, l-1, 16):
+    en = en + encrypt(rks, text[i:i+16])
+
+print(en)
+
+l = len(en)
+den = ''
+for i in range(0, l-1, 32):
+    den = den + decrypt(rks, en[i:i+32])
+print(den)
