@@ -216,10 +216,15 @@ def decrypt(rkList, cipherText):
     return state_mat
 
 def simulate_aes(key, text):
+
+    if len(key) > 16:
+        key = key[0:16]
+    elif len(key) < 16:
+        key.ljust(16, '0')
     
     keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
     textInHex = BitVector(textstring=text).get_bitvector_in_hex()
-    
+
     rk_list = get_rk_list(keyInHex)
 
     cipherText = encrypt(rk_list, textInHex)
@@ -255,5 +260,6 @@ def simulate_aes(key, text):
 
 key = "Thats my Kung Fu"
 text = "Two One Nine Two"
+
 simulate_aes(key, text)
 
