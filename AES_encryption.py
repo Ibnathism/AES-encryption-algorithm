@@ -62,7 +62,7 @@ def generate_sub_bytes(word: str, is_inverse: bool):
     sub_bytes = ""
     
     for i in range(0, length-1, 2):
-        temp = read_sbox(word[i:i+2], is_inverse)
+        temp = read_sbox(index_string=word[i:i+2], is_inverse=is_inverse)
         sub_bytes = sub_bytes + temp
     
     return sub_bytes
@@ -97,21 +97,21 @@ def inverse_cyclic_shift_row(state_mat: str):
 
 def g(word: str, round_constant: str):
     
-    row_shifted_word = shift_row(word)
-    sub_bytes = generate_sub_bytes(row_shifted_word, False)
-    result = add_round_key(sub_bytes, round_constant)
+    row_shifted_word = shift_row(word=word)
+    sub_bytes = generate_sub_bytes(word=row_shifted_word, is_inverse=False)
+    result = add_round_key(str1=sub_bytes, str2=round_constant)
     
     return result
 
 def generate_round_keys(word0: str, word1: str, word2: str, word3: str, round_constant:str):
     
     round_key = ''
-    temp = g(word3, round_constant)
+    temp = g(word=word3, round_constant=round_constant)
     
-    word4 = add_round_key(word0, temp)
-    word5 = add_round_key(word4, word1)
-    word6 = add_round_key(word5, word2)
-    word7 = add_round_key(word6, word3)
+    word4 = add_round_key(str1=word0, str2=temp)
+    word5 = add_round_key(str1=word4, str2=word1)
+    word6 = add_round_key(str1=word5, str2=word2)
+    word7 = add_round_key(str1=word6, str2=word3)
     
     round_key = word4+word5+word6+word7
     
@@ -122,7 +122,7 @@ def multiply(str1: str, str2: str):
     AES_modulus = BitVector(bitstring='100011011')
     bv1 = BitVector(hexstring=str1)
     bv2 = BitVector(hexstring=str2)
-    temp = bv1.gf_multiply_modular(bv2, AES_modulus, 8)
+    temp = bv1.gf_multiply_modular(b=bv2, mod=AES_modulus, n=8)
     
     return temp.get_bitvector_in_hex()
 
@@ -139,14 +139,14 @@ def get_mix_column_value(row: int, col: int, state_mat: str, is_inverse: bool):
     else:
         mix_con = "02010103030201010103020101010302"
     
-    m0 = multiply(get_linear_val(row, 0, mix_con), get_linear_val(0, col, state_mat))
-    m1 = multiply(get_linear_val(row, 1, mix_con), get_linear_val(1, col, state_mat))
-    m2 = multiply(get_linear_val(row, 2, mix_con), get_linear_val(2, col, state_mat))
-    m3 = multiply(get_linear_val(row, 3, mix_con), get_linear_val(3, col, state_mat))
+    m0 = multiply(str1=get_linear_val(row=row, col=0, str=mix_con), str2=get_linear_val(row=0, col=col, str=state_mat))
+    m1 = multiply(str1=get_linear_val(row=row, col=1, str=mix_con), str2=get_linear_val(row=1, col=col, str=state_mat))
+    m2 = multiply(str1=get_linear_val(row=row, col=2, str=mix_con), str2=get_linear_val(row=2, col=col, str=state_mat))
+    m3 = multiply(str1=get_linear_val(row=row, col=3, str=mix_con), str2=get_linear_val(row=3, col=col, str=state_mat))
     
-    temp = add_round_key(m0, m1)
-    temp = add_round_key(temp, m2)
-    temp = add_round_key(temp, m3)
+    temp = add_round_key(str1=m0, str2=m1)
+    temp = add_round_key(str1=temp, str2=m2)
+    temp = add_round_key(str1=temp, str2=m3)
     
     return temp
 
@@ -156,7 +156,7 @@ def apply_mix_column(state_mat: str, is_inverse: bool):
     
     for col in range(0,4):
         for row in range(0,4):
-            temp = temp + get_mix_column_value(row, col, state_mat, is_inverse)
+            temp = temp + get_mix_column_value(row=row, col=col, state_mat=state_mat, is_inverse=is_inverse)
     
     return temp
 
@@ -173,7 +173,7 @@ def get_rk_list(keyInHex: str):
     word3 = keyInHex[24:32]
 
     for i in range(1, 11):
-        round_key = generate_round_keys(word0, word1, word2, word3, round_constants[i-1])
+        round_key = generate_round_keys(word0=word0, word1=word1, word2=word2, word3=word3, round_constant=round_constants[i-1])
         #print(round_key)
         rk_list.append(round_key)
         word0 = round_key[0:8]
@@ -188,16 +188,16 @@ def encrypt_text(rkList: list, text: str):
 
     textInHex = BitVector(textstring=text).get_bitvector_in_hex()
     
-    state_mat = add_round_key(rkList[0], textInHex)
+    state_mat = add_round_key(str1=rkList[0], str2=textInHex)
 
     for r in range(1, 11):
-        state_mat = generate_sub_bytes(state_mat, False)
-        state_mat = cyclic_shift_row(state_mat)
+        state_mat = generate_sub_bytes(word=state_mat, is_inverse=False)
+        state_mat = cyclic_shift_row(state_mat=state_mat)
         
         if r != 10:
-            state_mat = apply_mix_column(state_mat, False)
+            state_mat = apply_mix_column(state_mat=state_mat, is_inverse=False)
         
-        state_mat = add_round_key(state_mat, rkList[r])
+        state_mat = add_round_key(str1=state_mat, str2=rkList[r])
         
         #print(r, ': ', state_mat)
     
@@ -205,15 +205,15 @@ def encrypt_text(rkList: list, text: str):
 
 def decrypt_text(rkList: list, cipherText: str):
     
-    state_mat = add_round_key(rkList[10], cipherText)
+    state_mat = add_round_key(str1=rkList[10], str2=cipherText)
 
     for r in range(1, 11):
-        state_mat = inverse_cyclic_shift_row(state_mat)
-        state_mat = generate_sub_bytes(state_mat, True)
-        state_mat = add_round_key(state_mat, rkList[10-r])
+        state_mat = inverse_cyclic_shift_row(state_mat=state_mat)
+        state_mat = generate_sub_bytes(word=state_mat, is_inverse=True)
+        state_mat = add_round_key(str1=state_mat, str2=rkList[10-r])
         
         if r != 10:
-            state_mat = apply_mix_column(state_mat, True)
+            state_mat = apply_mix_column(state_mat=state_mat, is_inverse=True)
         
         #print(r, ': ', state_mat)
 
@@ -231,11 +231,11 @@ def init(key: str):
     
     keyInHex = BitVector(textstring=key).get_bitvector_in_hex()
 
-    rk_list = get_rk_list(keyInHex)
+    rk_list = get_rk_list(keyInHex=keyInHex)
 
     return rk_list
 
-def encrypt(f_name: str):
+def encrypt(f_name: str, rks: list):
     s = ConstBitStream(filename=f_name)
     text = BitVector(bitstring=s).get_bitvector_in_ascii()
 
@@ -251,7 +251,7 @@ def encrypt(f_name: str):
 
     return encrypted_text
 
-def decrypt(encrypted_text: str, file_name: str):
+def decrypt(encrypted_text: str, file_name: str, rks: list):
     l = len(encrypted_text)
     den = ''
     for i in range(0, l-1, 32):
@@ -262,7 +262,7 @@ def decrypt(encrypted_text: str, file_name: str):
     f = open(file_name, 'a')
     f.write(den)
 
-def encrypt_image(file_name: str):
+def encrypt_image(file_name: str, rks: list):
     with open(file_name, "rb") as image2string: 
         text = base64.b64encode(image2string.read()) 
     text = text.decode('utf-8')
@@ -278,7 +278,7 @@ def encrypt_image(file_name: str):
 
     return encrypted_text
 
-def decrypt_image(encrypted_text: str, file_name: str):
+def decrypt_image(encrypted_text: str, file_name: str, rks: list):
     l = len(encrypted_text)
     den = ''
     for i in range(0, l-1, 32):
@@ -297,8 +297,8 @@ input_filename = "input.txt"
 output_filename = "output.txt"
 
 if  input_filename.endswith('.png') or input_filename.endswith('.jpg') or input_filename.endswith('.jpeg'):
-    en_text = encrypt_image(file_name=input_filename)
-    decrypt_image(encrypted_text=en_text, file_name=output_filename)
+    en_text = encrypt_image(file_name=input_filename, rks=rks)
+    decrypt_image(encrypted_text=en_text, file_name=output_filename, rks=rks)
 else:
-    en_text = encrypt(f_name=input_filename)
-    decrypt(encrypted_text=en_text, file_name=output_filename)
+    en_text = encrypt(f_name=input_filename, rks=rks)
+    decrypt(encrypted_text=en_text, file_name=output_filename, rks=rks)
