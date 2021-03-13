@@ -39,7 +39,7 @@ InvSbox = (
     [0x17, 0x2B, 0x04, 0x7E, 0xBA, 0x77, 0xD6, 0x26, 0xE1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0C, 0x7D],
 )
 
-def read_sbox(index_string, is_inverse):
+def read_sbox(index_string: str, is_inverse: bool):
     
     row = int(index_string[0], 16)
     col = int(index_string[1], 16)
@@ -56,7 +56,7 @@ def read_sbox(index_string, is_inverse):
     
     return str(s_box_data)[2:4]
 
-def generate_sub_bytes(word, is_inverse):
+def generate_sub_bytes(word: str, is_inverse: bool):
     
     length = len(word)
     sub_bytes = ""
@@ -67,17 +67,17 @@ def generate_sub_bytes(word, is_inverse):
     
     return sub_bytes
 
-def add_round_key(str1, str2):
+def add_round_key(str1: str, str2: str):
     
     added_val = BitVector(hexstring=str1) ^ BitVector(hexstring=str2)
     
     return added_val.get_bitvector_in_hex()
 
-def shift_row(word):
+def shift_row(word: str):
     
     return word[2:8]+word[0:2]
 
-def cyclic_shift_row(state_mat):
+def cyclic_shift_row(state_mat: str):
     
     w0 = state_mat[0:2] + state_mat[10:12] + state_mat[20:22] + state_mat[30:32]
     w1 = state_mat[8:10] + state_mat[18:20] + state_mat[28:30] + state_mat[6:8]
@@ -86,7 +86,7 @@ def cyclic_shift_row(state_mat):
 
     return w0 + w1 + w2 + w3 
 
-def inverse_cyclic_shift_row(state_mat):
+def inverse_cyclic_shift_row(state_mat: str):
     
     w0 = state_mat[0:2] + state_mat[26:28] + state_mat[20:22] + state_mat[14:16]
     w1 = state_mat[8:10] + state_mat[2:4] + state_mat[28:30] + state_mat[22:24]
@@ -95,7 +95,7 @@ def inverse_cyclic_shift_row(state_mat):
 
     return w0 + w1 + w2 + w3 
 
-def g(word, round_constant):
+def g(word: str, round_constant: str):
     
     row_shifted_word = shift_row(word)
     sub_bytes = generate_sub_bytes(row_shifted_word, False)
@@ -103,7 +103,7 @@ def g(word, round_constant):
     
     return result
 
-def generate_round_keys(word0, word1, word2, word3, round_constant):
+def generate_round_keys(word0: str, word1: str, word2: str, word3: str, round_constant:str):
     
     round_key = ''
     temp = g(word3, round_constant)
@@ -117,7 +117,7 @@ def generate_round_keys(word0, word1, word2, word3, round_constant):
     
     return round_key
 
-def multiply(str1, str2):
+def multiply(str1: str, str2: str):
     
     AES_modulus = BitVector(bitstring='100011011')
     bv1 = BitVector(hexstring=str1)
@@ -126,13 +126,13 @@ def multiply(str1, str2):
     
     return temp.get_bitvector_in_hex()
 
-def get_linear_val(row, col, str):
+def get_linear_val(row: int, col: int, str: str):
     
     idx = row*2 + col*8
     
     return str[idx:idx+2]
 
-def get_mix_column_value(row, col, state_mat, is_inverse):
+def get_mix_column_value(row: int, col: int, state_mat: str, is_inverse: bool):
     
     if is_inverse:
         mix_con = "0E090D0B0B0E090D0D0B0E09090D0B0E"
@@ -150,7 +150,7 @@ def get_mix_column_value(row, col, state_mat, is_inverse):
     
     return temp
 
-def apply_mix_column(state_mat, is_inverse):
+def apply_mix_column(state_mat: str, is_inverse: bool):
     
     temp = ''
     
@@ -160,7 +160,7 @@ def apply_mix_column(state_mat, is_inverse):
     
     return temp
 
-def get_rk_list(keyInHex):
+def get_rk_list(keyInHex: str):
     
     round_constants = ['01000000','02000000', '04000000' , '08000000', '10000000', '20000000', '40000000',  '80000000', '1b000000', '36000000']
     
@@ -184,7 +184,7 @@ def get_rk_list(keyInHex):
     return rk_list
 
 
-def encrypt_text(rkList, text):
+def encrypt_text(rkList: list, text: str):
 
     textInHex = BitVector(textstring=text).get_bitvector_in_hex()
     
@@ -203,7 +203,7 @@ def encrypt_text(rkList, text):
     
     return state_mat
 
-def decrypt_text(rkList, cipherText):
+def decrypt_text(rkList: list, cipherText: str):
     
     state_mat = add_round_key(rkList[10], cipherText)
 
@@ -223,7 +223,7 @@ def decrypt_text(rkList, cipherText):
     return state_mat
     
 
-def init(key):
+def init(key: str):
     if len(key) > 16:
         key = key[0:16]
     elif len(key) < 16:
@@ -235,7 +235,7 @@ def init(key):
 
     return rk_list
 
-def encrypt(f_name):
+def encrypt(f_name: str):
     s = ConstBitStream(filename=f_name)
     text = BitVector(bitstring=s).get_bitvector_in_ascii()
 
@@ -245,27 +245,26 @@ def encrypt(f_name):
         t = text[i:i+16]
         if i+16 > l:
             t = t.ljust(16)
-        temp = encrypt_text(rks, t)
+        temp = encrypt_text(rkList=rks, text=t)
         print('Cipher', temp)
         encrypted_text = encrypted_text + temp
 
     return encrypted_text
 
-def decrypt(encrypted_text, file_name):
+def decrypt(encrypted_text: str, file_name: str):
     l = len(encrypted_text)
     den = ''
     for i in range(0, l-1, 32):
-        temp = decrypt_text(rks, encrypted_text[i:i+32])
+        temp = decrypt_text(rkList=rks, cipherText=encrypted_text[i:i+32])
         #print("Decipher", temp)
         den = den + temp
 
     f = open(file_name, 'a')
     f.write(den)
 
-def encrypt_image(file_name):
+def encrypt_image(file_name: str):
     with open(file_name, "rb") as image2string: 
         text = base64.b64encode(image2string.read()) 
-    #print(converted_string) 
     text = text.decode('utf-8')
     l = len(text)
     encrypted_text = ''
@@ -273,17 +272,17 @@ def encrypt_image(file_name):
         t = text[i:i+16]
         if i+16 > l:
             t = t.ljust(16)
-        temp = encrypt_text(rks, t)
+        temp = encrypt_text(rkList=rks, text=t)
         print('Cipher', temp)
         encrypted_text = encrypted_text + temp
 
     return encrypted_text
 
-def decrypt_image(encrypted_text, file_name):
+def decrypt_image(encrypted_text: str, file_name: str):
     l = len(encrypted_text)
     den = ''
     for i in range(0, l-1, 32):
-        temp = decrypt_text(rks, encrypted_text[i:i+32])
+        temp = decrypt_text(rkList=rks, cipherText=encrypted_text[i:i+32])
         den = den + temp
     decodeit = open(file_name, 'wb') 
     decodeit.write(base64.b64decode((den)))
@@ -292,14 +291,14 @@ def decrypt_image(encrypted_text, file_name):
 
 key = "Thats my Kung Fuhgjhghg"
 
-rks = init(key)
+rks = init(key=key)
 
-input_filename = "input.png"
-output_filename = "output.png"
+input_filename = "input.txt"
+output_filename = "output.txt"
 
 if  input_filename.endswith('.png') or input_filename.endswith('.jpg') or input_filename.endswith('.jpeg'):
-    en_text = encrypt_image(input_filename)
-    decrypt_image(en_text, output_filename)
+    en_text = encrypt_image(file_name=input_filename)
+    decrypt_image(encrypted_text=en_text, file_name=output_filename)
 else:
-    en_text = encrypt(input_filename)
-    decrypt(en_text, output_filename)
+    en_text = encrypt(f_name=input_filename)
+    decrypt(encrypted_text=en_text, file_name=output_filename)
