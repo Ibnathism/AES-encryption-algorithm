@@ -262,8 +262,8 @@ def decrypt(encrypted_text, file_name):
     f = open(file_name, 'a')
     f.write(den)
 
-def r_w_image():
-    with open("input.png", "rb") as image2string: 
+def encrypt_image(file_name):
+    with open(file_name, "rb") as image2string: 
         text = base64.b64encode(image2string.read()) 
     #print(converted_string) 
     text = text.decode('utf-8')
@@ -277,22 +277,29 @@ def r_w_image():
         print('Cipher', temp)
         encrypted_text = encrypted_text + temp
 
+    return encrypted_text
+
+def decrypt_image(encrypted_text, file_name):
     l = len(encrypted_text)
     den = ''
     for i in range(0, l-1, 32):
         temp = decrypt_text(rks, encrypted_text[i:i+32])
         den = den + temp
-    decodeit = open('output.png', 'wb') 
+    decodeit = open(file_name, 'wb') 
     decodeit.write(base64.b64decode((den)))
+
+
 
 key = "Thats my Kung Fuhgjhghg"
 
 rks = init(key)
 
-# en_text = encrypt("input.txt")
+input_filename = "input.png"
+output_filename = "output.png"
 
-# decrypt(en_text, "output.txt")
-
-
-
-r_w_image()
+if  input_filename.endswith('.png') or input_filename.endswith('.jpg') or input_filename.endswith('.jpeg'):
+    en_text = encrypt_image(input_filename)
+    decrypt_image(en_text, output_filename)
+else:
+    en_text = encrypt(input_filename)
+    decrypt(en_text, output_filename)
